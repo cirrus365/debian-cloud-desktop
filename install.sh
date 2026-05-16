@@ -68,6 +68,10 @@ user_password: "$USER_PASSWORD"
 vnc_password: "$VNC_PASSWORD"
 domain: "$DOMAIN"
 timezone: "$TIMEZONE"
+novnc_port: 6080
+vnc_display_num: 1
+vnc_resolution: "1920x1080"
+nginx_ssl_port: 443
 EOF
 
 cat > "$INSTALL_DIR/inventory.ini" <<EOF
