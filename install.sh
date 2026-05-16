@@ -70,7 +70,7 @@ domain: "$DOMAIN"
 timezone: "$TIMEZONE"
 novnc_port: 6080
 vnc_display_num: 1
-vnc_resolution: "1920x1080"
+vnc_resolution: "1280x720"
 nginx_ssl_port: 443
 EOF
 
