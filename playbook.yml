@@ -30,6 +30,12 @@
         create_home: yes
       when: user_check.rc != 0
 
+    - name: Ensure /etc/sudoers.d exists
+      file:
+        path: /etc/sudoers.d
+        state: directory
+        mode: 0755
+
     - name: Configure passwordless sudo for {{ username }}
       copy:
         content: "{{ username }} ALL=(ALL) NOPASSWD: ALL"
