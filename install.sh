@@ -20,32 +20,32 @@ apt update -qq && apt install -y ansible git
 echo "[2/5] Configuring your desktop..."
 
 if [ -z "$USERNAME" ]; then
-    read -p "System username: " USERNAME
+    read -p "System username: " USERNAME </dev/tty
 fi
 
 if [ -z "$USER_PASSWORD" ]; then
-    read -s -p "System password (blank = auto-generate): " USER_PASSWORD
+    read -s -p "System password (blank = auto-generate): " USER_PASSWORD </dev/tty
     echo ""
 fi
 
 if [ -z "$VNC_PASSWORD" ]; then
-    read -s -p "VNC desktop password: " VNC_PASSWORD
+    read -s -p "VNC desktop password: " VNC_PASSWORD </dev/tty
     echo ""
     while [ -z "$VNC_PASSWORD" ]; do
-        read -s -p "VNC password (required): " VNC_PASSWORD
+        read -s -p "VNC password (required): " VNC_PASSWORD </dev/tty
         echo ""
     done
 fi
 
 if [ -z "$DOMAIN" ]; then
-    read -p "Configure domain for Let's Encrypt? (y/N): " HAS_DOMAIN
+    read -p "Configure domain for Let's Encrypt? (y/N): " HAS_DOMAIN </dev/tty
     if [[ "$HAS_DOMAIN" =~ ^[Yy] ]]; then
-        read -p "  Domain name: " DOMAIN
+        read -p "  Domain name: " DOMAIN </dev/tty
     fi
 fi
 
 if [ -z "$TIMEZONE" ]; then
-    read -p "Timezone [UTC]: " TIMEZONE
+    read -p "Timezone [UTC]: " TIMEZONE </dev/tty
     TIMEZONE="${TIMEZONE:-UTC}"
 fi
 
