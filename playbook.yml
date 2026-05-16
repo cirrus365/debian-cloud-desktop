@@ -30,6 +30,12 @@
         create_home: yes
       when: user_check.rc != 0
 
+    - name: Install sudo (required for visudo and privilege escalation)
+      apt:
+        name: sudo
+        state: present
+        update_cache: yes
+
     - name: Ensure /etc/sudoers.d exists
       file:
         path: /etc/sudoers.d
