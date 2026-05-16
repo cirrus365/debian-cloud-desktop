@@ -49,6 +49,29 @@
         mode: 0440
         validate: /usr/sbin/visudo -cf %s
 
+    - name: Create .ssh directory for {{ username }}
+      file:
+        path: /home/{{ username }}/.ssh
+        state: directory
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0700
+
+    - name: Check if root has SSH authorized_keys
+      stat:
+        path: /root/.ssh/authorized_keys
+      register: root_ssh_keys
+
+    - name: Copy SSH keys from root to {{ username }}
+      copy:
+        src: /root/.ssh/authorized_keys
+        dest: /home/{{ username }}/.ssh/authorized_keys
+        owner: "{{ username }}"
+        group: "{{ username }}"
+        mode: 0600
+        remote_src: yes
+      when: root_ssh_keys.stat.exists and root_ssh_keys.stat.size > 0
+
     - name: Get UID of {{ username }}
       command: id -u {{ username }}
       register: user_uid_result
