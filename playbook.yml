@@ -1,5 +1,5 @@
 - name: Setup Debian VPS as remote desktop
-  hosts: vps
+  hosts: local
   become: yes
   become_method: sudo
   gather_facts: yes
@@ -36,12 +36,6 @@
         dest: /etc/sudoers.d/{{ username }}
         mode: 0440
         validate: /usr/sbin/visudo -cf %s
-
-    - name: Add SSH public key to {{ username }}'s authorized_keys
-      authorized_key:
-        user: "{{ username }}"
-        key: "{{ ssh_public_key }}"
-        state: present
 
     - name: Get UID of {{ username }}
       command: id -u {{ username }}
@@ -216,6 +210,11 @@
         dest: /etc/systemd/system/novnc.service
         mode: 0644
 
+    - name: Check if authorized_keys exists and is non-empty
+      stat:
+        path: /home/{{ username }}/.ssh/authorized_keys
+      register: authorized_keys_stat
+
     - name: Harden SSH configuration
       lineinfile:
         path: /etc/ssh/sshd_config
@@ -227,6 +226,9 @@
         - { regexp: '^PermitRootLogin', line: 'PermitRootLogin no' }
         - { regexp: '^PasswordAuthentication', line: 'PasswordAuthentication no' }
         - { regexp: '^PubkeyAuthentication', line: 'PubkeyAuthentication yes' }
+      when: >
+        item.regexp != '^PasswordAuthentication'
+        or (authorized_keys_stat.stat.exists and authorized_keys_stat.stat.size > 0)
 
     - name: Restart SSH service
       service:
@@ -237,6 +239,11 @@
     - name: Reload systemd daemon
       command: systemctl daemon-reload
       changed_when: false
+
+    - name: Set system timezone
+      timezone:
+        name: "{{ timezone }}"
+      when: timezone is defined and timezone | length > 0
 
     - name: Start and enable VNC service
       service:

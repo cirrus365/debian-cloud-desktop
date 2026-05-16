@@ -1,118 +1,87 @@
 # Debian Remote Desktop Ansible Playbook
 
-Transform a fresh Debian 12+ (Stable) VPS into a full remote desktop with web-based VNC access.
+Transform a fresh Debian 12+ (Stable) machine into a full remote desktop with web-based VNC access.
 
 ## Features
 
 - **Desktop Environment**: XFCE4 with polished experience (goodies, whiskermenu, arc-theme, papirus-icons, power-manager, thunar-archive-plugin, gvfs, fonts-noto) and Firefox ESR browser
-- **Web-based VNC**: noVNC with SSL encryption accessible via browser (`https://your_vps_ip` - no port needed)
+- **Web-based VNC**: noVNC with SSL encryption accessible via browser
 - **Clipboard Sharing**: Bidirectional clipboard sync between client and remote desktop
 - **Security Hardened**:
-  - SSH key-only authentication
+  - SSH key-based authentication (if key present)
   - Root login disabled
-  - Password authentication disabled
   - Firewall configured (only SSH + HTTPS + HTTP open)
   - **nginx rate limiting**: 5 requests/minute/IP to WebSocket endpoint (real-time)
   - **TigerVNC blacklist**: Blocks localhost after 5 failed auths for 10 minutes (built-in)
   - **Fail2ban**: Long-term IP banning from nginx access logs (20 connections/10min = 1 hour ban)
 - **Optional Let's Encrypt**: Set a domain in `vars.yml` for valid HTTPS certificates
 - **Automated**: Runs system updates after setup
-- **Configurable User**: Set your own non-root username via `vars.yml`
+- **Configurable User**: Set your own non-root username
 
 ## Requirements
 
-- Debian 12+ (Stable) VPS
-- Ansible installed on control node (`pip install ansible`)
-- SSH access to VPS as `root` (initial setup)
-- Your SSH public key
+- Debian 12+ (Stable) system
+- Root access (or sudo)
 
 ## Quick Start
 
-### 1. Clone/Download Files
+### One-liner Bootstrap
 
-Ensure you have these files:
-- `playbook.yml` - Main Ansible playbook
-- `inventory.ini` - VPS IP configuration
-- `vars.yml` - Configuration variables (should be encrypted with vault)
-
-### 2. Configure Inventory
-
-Edit `inventory.ini`:
-```ini
-[vps]
-your_vps_ip ansible_user=root ansible_ssh_private_key_file=~/.ssh/id_rsa
-```
-
-Use `ansible_user=root` for the initial run against a fresh Debian VPS. After the playbook completes, you can update to `ansible_user=your_username`.
-
-### 3. Set Variables
-
-Create `vars.yml` with your configuration:
-```yaml
-# Configurable non-root user (will be created by playbook)
-username: your_username
-
-# Sensitive values - encrypt with: ansible-vault encrypt vars.yml
-user_password: "your-user-password"
-vnc_password: "your-vnc-password"
-ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2E... your@email.com"
-
-# Non-sensitive configuration
-novnc_port: 6080
-vnc_display_num: 1
-vnc_resolution: "1920x1080"
-nginx_ssl_port: 443
-
-# Optional: Set a domain for Let's Encrypt cert (self-signed used otherwise)
-# domain: "vnc.example.com"
-# letsencrypt_email: ""
-```
-
-Encrypt sensitive data:
-```bash
-ansible-vault encrypt vars.yml
-```
-
-### 4. Initial VPS Setup
-
-Before running the playbook, ensure:
-- Root SSH access is available on the VPS
-- Your SSH public key is in root's `~/.ssh/authorized_keys`
-
-### 5. Run the Playbook
+Run as root on your Debian machine:
 
 ```bash
-ansible-playbook -i inventory.ini -e @vars.yml playbook.yml --ask-vault-pass
+curl -sSL https://raw.githubusercontent.com/cirrus365/virtual-desktop-playbook/main/install.sh | bash
 ```
+
+The script will:
+1. Install Ansible and Git
+2. Prompt for username, system password, VNC password, domain (optional), and timezone
+3. Clone the playbook to `/opt/vdp`
+4. Run the Ansible playbook locally
+
+### Silent / Unattended Install
+
+Set environment variables before running the script to skip all prompts:
+
+```bash
+export VDP_USERNAME="myuser"
+export VDP_USER_PASSWORD="s3cret"
+export VDP_VNC_PASSWORD="vnc123"
+export VDP_DOMAIN="vnc.example.com"
+export VDP_TIMEZONE="Europe/London"
+curl -sSL https://raw.githubusercontent.com/cirrus365/virtual-desktop-playbook/main/install.sh | bash
+```
+
+All variables are optional — any not set will be prompted interactively.
 
 ## Access Your Remote Desktop
 
 ### Web Interface (noVNC via nginx)
-1. Open browser: `https://your_vps_ip` (or `https://vnc.yourdomain.com` if configured)
+1. Open browser: `https://your_server_ip` (or `https://vnc.yourdomain.com` if configured)
 2. Accept the self-signed certificate warning (unless using Let's Encrypt with a domain)
 3. Click "Connect"
-4. Enter VNC password (set in `vars.yml`)
+4. Enter VNC password
 5. Enjoy your XFCE4 desktop with Firefox ESR!
 
 ### SSH Access
 ```bash
-ssh your_username@your_vps_ip
+ssh your_username@your_server_ip
 ```
 
 ## Configuration Options
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `username` | `debian` | Configurable non-root user created by playbook |
-| `user_password` | (required) | Password for the non-root user |
+| `username` | (required) | Configurable non-root user created by playbook |
+| `user_password` | auto-generated | Password for the non-root user |
 | `vnc_password` | (required) | VNC session password |
-| `ssh_public_key` | (required) | Your SSH public key |
 | `novnc_port` | 6080 | noVNC backend port (internal, only localhost) |
 | `vnc_display_num` | 1 | VNC display number (port = 5900 + display_num) |
 | `vnc_resolution` | 1920x1080 | VNC session resolution |
 | `nginx_ssl_port` | 443 | nginx HTTPS listen port |
 | `domain` | `""` | Optional domain for Let's Encrypt (e.g. `vnc.example.com`) |
-| `letsencrypt_email` | `""` | Email for Let's Encrypt registration (optional, skipped if empty) |
+| `letsencrypt_email` | `""` | Optional email for Let's Encrypt registration |
+| `timezone` | `UTC` | System timezone |
 
 ## Three-Layer Brute Force Protection
 
@@ -128,7 +97,7 @@ Fail2ban monitors nginx access logs for `/websockify` WebSocket connections and 
 
 Check fail2ban status:
 ```bash
-ssh your_username@your_vps_ip "sudo fail2ban-client status novnc"
+ssh your_username@your_server_ip "sudo fail2ban-client status novnc"
 ```
 
 ## Firewall Rules
@@ -154,58 +123,58 @@ The noVNC backend port (`{{ novnc_port }}`) is bound to localhost only and not e
 ### Can't connect to noVNC
 ```bash
 # Check services
-ssh your_username@your_vps_ip "systemctl status vncserver-<username> novnc nginx fail2ban"
+systemctl status vncserver-<username> novnc nginx fail2ban
 
 # Check listening ports (nginx on 443, VNC on 5901, websockify on 127.0.0.1:6080)
-ssh your_username@your_vps_ip "ss -tlnp | grep -E '(5901|6080|:443)'"
+ss -tlnp | grep -E '(5901|6080|:443)'
 
 # Check fail2ban
-ssh your_username@your_vps_ip "sudo fail2ban-client status novnc"
+sudo fail2ban-client status novnc
 ```
 
 ### VNC session issues
 ```bash
 # Check VNC logs (TigerVNC 1.15+ location)
-ssh your_username@your_vps_ip "cat /home/your_username/.config/tigervnc/localhost:1.log"
+cat /home/your_username/.config/tigervnc/localhost:1.log
 ```
 
 ### Firefox not found
 The playbook installs Firefox ESR. If missing:
 ```bash
-ssh your_username@your_vps_ip "sudo apt install firefox-esr"
+sudo apt install firefox-esr
 ```
 
 ## File Structure
 
 ```
-.
+/opt/vdp/
 ├── playbook.yml          # Main Ansible playbook
-├── inventory.ini        # VPS connection details
-├── vars.yml            # Configuration (encrypted with vault)
-├── example_vars.yml    # Template for vars.yml
+├── inventory.ini         # Local connection config
+├── vars.yml             # Configuration (generated by install.sh)
+├── install.sh           # Bootstrap script
+├── example_vars.yml     # Template for vars.yml
 ├── example_inventory.ini # Template for inventory.ini
-└── README.md          # This file
+└── README.md           # This file
 ```
 
 ## Optional: Custom Domain & Let's Encrypt
 
 By default the playbook generates a self-signed certificate (valid for 365 days). To use a valid Let's Encrypt certificate:
 
-1. Point your domain's DNS A record to your VPS IP
-2. Set in `vars.yml`:
+1. Point your domain's DNS A record to your server IP
+2. Rerun the playbook with `domain` set in `vars.yml`:
    ```yaml
    domain: "vnc.example.com"
-   # letsencrypt_email: "admin@example.com"  # optional
    ```
-3. Run the playbook normally
+3. Or re-run `install.sh` and answer "y" when asked about domain
 
 Certbot will obtain a certificate via the webroot method on port 80, and the nginx config updates to serve the Let's Encrypt certs. Auto-renewal is enabled via `certbot.timer`.
 
-**Without a domain**: Uses self-signed certificate. Access via `https://your_vps_ip`.
+**Without a domain**: Uses self-signed certificate. Access via `https://your_server_ip`.
 
 ## Security Notes
 
-- This playbook disables password authentication for SSH - ensure your SSH key works before running
+- SSH password authentication is disabled only when an SSH key is detected in `authorized_keys`
 - Root login is disabled after playbook completion
 - The configured user has passwordless sudo access
 - Self-signed SSL certificate is valid for 365 days (Let's Encrypt certs valid for 90 days, auto-renewed)

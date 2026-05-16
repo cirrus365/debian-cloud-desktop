@@ -7,7 +7,6 @@ username: your_username_here
 # Sensitive (replace with actual values)
 user_password: "your-user-plaintext-password"
 vnc_password: "vnc-password"
-ssh_public_key: "ssh-rsa AAAAB3NzaC1yc2E... your@email.com" # Your SSH public key
 
 # Non-sensitive configuration
 novnc_port: 6080
