@@ -30,7 +30,7 @@ Transform a fresh Debian 12+ (Stable) machine into a full remote desktop with we
 Run as root on your Debian machine:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/cirrus365/virtual-desktop-playbook/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/cirrus365/debian-cloud-desktop/main/install.sh | bash
 ```
 
 The script will:
@@ -49,7 +49,7 @@ export VDP_USER_PASSWORD="s3cret"
 export VDP_VNC_PASSWORD="vnc123"
 export VDP_DOMAIN="vnc.example.com"
 export VDP_TIMEZONE="Europe/London"
-curl -sSL https://raw.githubusercontent.com/cirrus365/virtual-desktop-playbook/main/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/cirrus365/debian-cloud-desktop/main/install.sh | bash
 ```
 
 All variables are optional — any not set will be prompted interactively.
